@@ -49,10 +49,8 @@ def create_incident(nombre: str, email: str, perfil: str, mensaje: str) -> str:
         f"\n{mensaje}"
     )
     payload = json.dumps({
-        "title":        f"Consulta SIGALU – {nombre} ({perfil})",
-        "description":  descripcion,
-        "casetypecode":  1,    # 1 = Question
-        "caseorigincode": 3,   # 3 = Web
+        "title":       f"Consulta SIGALU – {nombre} ({perfil})",
+        "description": descripcion,
     }).encode()
 
     req = urllib.request.Request(endpoint, data=payload, method="POST")
@@ -63,9 +61,13 @@ def create_incident(nombre: str, email: str, perfil: str, mensaje: str) -> str:
     req.add_header("OData-Version",    "4.0")
     req.add_header("Prefer",           "return=representation")
 
-    with urllib.request.urlopen(req) as r:
-        data = json.loads(r.read())
-        return data.get("incidentid", "")
+    try:
+        with urllib.request.urlopen(req) as r:
+            data = json.loads(r.read())
+            return data.get("incidentid", "ok")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise Exception(f"Dynamics {e.code}: {body}")
 
 
 def cors_headers(req: func.HttpRequest) -> dict:
