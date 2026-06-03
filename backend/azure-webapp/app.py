@@ -28,7 +28,7 @@ def get_token():
         return json.loads(r.read())["access_token"]
 
 def d365(token, method, path, payload=None):
-    url  = f"{DYNAMICS_URL}/api/data/v9.2/{path}"
+    url  = f"{DYNAMICS_URL}/api/data/v9.2/{urllib.parse.quote(path, safe='=&$?/@(),\'')}"
     data = json.dumps(payload).encode() if payload else None
     req  = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization",    f"Bearer {token}")
