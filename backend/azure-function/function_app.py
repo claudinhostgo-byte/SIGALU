@@ -109,8 +109,10 @@ def contacto(req: func.HttpRequest) -> func.HttpResponse:
         )
 
     except Exception as e:
-        logging.error(f"Error CRM: {e}")
+        import traceback
+        detail = traceback.format_exc()
+        logging.error(f"Error CRM: {detail}")
         return func.HttpResponse(
-            json.dumps({"ok": False, "msg": "Error interno. Intenta más tarde."}),
+            json.dumps({"ok": False, "msg": str(e), "detail": detail}),
             status_code=500, headers={**headers, "Content-Type": "application/json"}
         )
