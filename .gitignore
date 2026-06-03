@@ -2,3 +2,8 @@ design_*.gz
 design_*.tgz
 design_*_extracted/
 *.tmp
+
+# Backend — credenciales y entorno (nunca subir a git)
+backend/api.py
+backend/.env
+

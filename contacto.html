@@ -96,32 +96,105 @@
       </div>
       <div class="reveal d1">
         <div class="contact-card">
-          <form data-demo>
+          <form id="crm-form">
             <div class="form-field">
               <label data-en="Full name">Nombre completo</label>
-              <input type="text" required data-en-ph="Your name" placeholder="Tu nombre" />
+              <input id="f-nombre" type="text" name="nombre" required data-en-ph="Your name" placeholder="Tu nombre" />
             </div>
             <div class="form-field">
               <label data-en="Email">Correo electrónico</label>
-              <input type="email" required data-en-ph="you@company.cl" placeholder="tu@empresa.cl" />
+              <input id="f-email" type="email" name="email" required data-en-ph="you@company.cl" placeholder="tu@empresa.cl" />
             </div>
             <div class="form-field">
               <label data-en="I am a…">Soy…</label>
-              <select required>
+              <select id="f-perfil" name="perfil" required>
                 <option value="" data-en="Select your profile">Selecciona tu perfil</option>
-                <option data-en="Producer">Productor</option>
-                <option data-en="Distributor">Comercializador</option>
-                <option data-en="Authorised manager">Gestor autorizado</option>
-                <option data-en="Industrial consumer">Consumidor industrial</option>
-                <option data-en="Press / general public">Prensa / público general</option>
+                <option value="Productor" data-en="Producer">Productor</option>
+                <option value="Comercializador" data-en="Distributor">Comercializador</option>
+                <option value="Gestor autorizado" data-en="Authorised manager">Gestor autorizado</option>
+                <option value="Consumidor industrial" data-en="Industrial consumer">Consumidor industrial</option>
+                <option value="Prensa / público general" data-en="Press / general public">Prensa / público general</option>
               </select>
             </div>
             <div class="form-field">
               <label data-en="Message">Mensaje</label>
-              <textarea required data-en-ph="How can we help you?" placeholder="¿Cómo podemos ayudarte?"></textarea>
+              <textarea id="f-mensaje" name="mensaje" required data-en-ph="How can we help you?" placeholder="¿Cómo podemos ayudarte?"></textarea>
             </div>
-            <button type="submit" class="btn btn--primary" style="width:100%" data-en="Send message">Enviar mensaje</button>
+
+            <!-- Estado: enviando -->
+            <div id="form-sending" style="display:none;text-align:center;padding:10px 0;color:var(--navy-700);font-family:var(--font-display);font-weight:600;font-size:15px;">
+              <svg style="width:20px;height:20px;vertical-align:middle;margin-right:8px;animation:spin 1s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/></svg>
+              <span data-en="Sending…">Enviando…</span>
+            </div>
+            <!-- Estado: éxito -->
+            <div id="form-ok" style="display:none;background:var(--soft);border:1px solid var(--green-600);border-radius:var(--r);padding:20px 24px;text-align:center;">
+              <svg style="width:36px;height:36px;color:var(--green-600);margin-bottom:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9"/></svg>
+              <p style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:17px;margin-bottom:4px" data-en="Message sent!">¡Mensaje enviado!</p>
+              <p style="font-size:14px;color:var(--muted)" data-en="We've created your enquiry in our system. We'll reply within two business days.">Creamos tu consulta en nuestro sistema. Te responderemos en dos días hábiles.</p>
+            </div>
+            <!-- Estado: error -->
+            <div id="form-err" style="display:none;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.3);border-radius:var(--r);padding:16px 20px;text-align:center;font-size:14px;color:#b91c1c;font-family:var(--font-display);font-weight:600;">
+              <span data-en="Error sending. Please email us at ">Error al enviar. Por favor escríbenos a </span><a href="mailto:contacto@sigalu.cl" style="color:inherit">contacto@sigalu.cl</a>
+            </div>
+
+            <button id="f-submit" type="submit" class="btn btn--primary" style="width:100%" data-en="Send message">Enviar mensaje</button>
           </form>
+
+          <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+          </style>
+
+          <script>
+          (function () {
+            // URL del backend — cambia a tu dominio de producción cuando despliegues el backend
+            var API = 'http://localhost:5000/api/contacto';
+
+            var form    = document.getElementById('crm-form');
+            var sending = document.getElementById('form-sending');
+            var okBox   = document.getElementById('form-ok');
+            var errBox  = document.getElementById('form-err');
+            var submit  = document.getElementById('f-submit');
+
+            form.addEventListener('submit', function (e) {
+              e.preventDefault();
+
+              // Reset estados
+              sending.style.display = 'block';
+              okBox.style.display   = 'none';
+              errBox.style.display  = 'none';
+              submit.style.display  = 'none';
+
+              var payload = {
+                nombre:  document.getElementById('f-nombre').value.trim(),
+                email:   document.getElementById('f-email').value.trim(),
+                perfil:  document.getElementById('f-perfil').value,
+                mensaje: document.getElementById('f-mensaje').value.trim(),
+              };
+
+              fetch(API, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify(payload),
+              })
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                sending.style.display = 'none';
+                if (data.ok) {
+                  okBox.style.display = 'block';
+                  form.reset();
+                } else {
+                  errBox.style.display  = 'block';
+                  submit.style.display  = 'block';
+                }
+              })
+              .catch(function () {
+                sending.style.display = 'none';
+                errBox.style.display  = 'block';
+                submit.style.display  = 'block';
+              });
+            });
+          })();
+          </script>
         </div>
       </div>
     </div>
