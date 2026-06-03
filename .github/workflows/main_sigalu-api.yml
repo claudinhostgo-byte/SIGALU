@@ -1,5 +1,5 @@
-# SIGALU – Build and deploy Azure Function (Python) to sigalu-api
-name: Build and deploy Python project to Azure Function App - sigalu-api
+# SIGALU – Deploy Flask app to Azure App Service
+name: Deploy Flask backend to Azure Web App - sigalu-api
 
 on:
   push:
@@ -8,53 +8,34 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'backend/azure-function'
   PYTHON_VERSION: '3.11'
+  APP_PATH: 'backend/azure-webapp'
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python version
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies and zip
-        run: |
-          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          pip install --target=".python_packages/lib/site-packages" -r requirements.txt
-          zip -r ${{ github.workspace }}/release.zip . -x "*.pyc" -x "__pycache__/*"
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: release.zip
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: python-app
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Unzip artifact for deployment
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
         run: |
-          unzip release.zip -d deploy_output
-          rm release.zip
+          cd ${{ env.APP_PATH }}
+          pip install -r requirements.txt
+
+      - name: Zip app for deployment
+        run: |
+          cd ${{ env.APP_PATH }}
+          zip -r ${{ github.workspace }}/app.zip . -x "*.pyc" -x "__pycache__/*"
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -63,9 +44,8 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C2B0C306FDAF4081896A41BC60C49446 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B3B69BFB079B40B3BED0B4EABE89499F }}
 
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'sigalu-api'
-          slot-name: 'Production'
-          package: 'deploy_output'
+          package: ${{ github.workspace }}/app.zip
