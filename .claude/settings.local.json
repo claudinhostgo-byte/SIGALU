@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(curl -L \"https://api.anthropic.com/v1/design/h/O-f7dARD37lyfBAaMANyrA?open_file=index.html\" -o \"C:\\\\CLAUDE\\\\WIT\\\\PROYECTOS\\\\SIGALU\\\\WEB\\\\design_raw.html\")",
+      "Bash(wc -l \"/mnt/c/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_raw.html\")",
+      "Bash(xxd)",
+      "Bash(gunzip -f design_raw.html.gz)",
+      "Bash(tar -xf design_raw.html -C design_extracted)",
+      "Bash(npx --yes serve --version)",
+      "Bash(mkdir -p \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/.claude\")",
+      "Bash(curl -L \"https://api.anthropic.com/v1/design/h/O-f7dARD37lyfBAaMANyrA?open_file=index.html\" -o \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_update.gz\")",
+      "Bash(curl -L \"https://api.anthropic.com/v1/design/h/BHiT6c8ONS38S1W42cqL1Q?open_file=index.html\" -o \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_new.tgz\")",
+      "Bash(gunzip -f \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_new_extracted/bundle.gz\")",
+      "Bash(tar -xf \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_new_extracted/bundle\" -C \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_new_extracted/\")",
+      "Bash(cd /tmp)",
+      "Bash(mkdir -p sigalu_new)",
+      "Bash(tar -xf \"C:/CLAUDE/WIT/PROYECTOS/SIGALU/WEB/design_new_extracted/bundle\" -C /tmp/sigalu_new)",
+      "Read(//tmp/sigalu_new/sigalu/**)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)"
+    ]
+  }
+}

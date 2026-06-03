@@ -1,0 +1,4 @@
+design_*.gz
+design_*.tgz
+design_*_extracted/
+*.tmp
