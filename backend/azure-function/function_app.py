@@ -38,36 +38,68 @@ def get_access_token() -> str:
         return json.loads(r.read())["access_token"]
 
 
-def create_incident(nombre: str, email: str, perfil: str, mensaje: str) -> str:
-    token    = get_access_token()
-    endpoint = f"{DYNAMICS_URL}/api/data/v9.2/incidents"
-
-    descripcion = (
-        f"Nombre: {nombre}\n"
-        f"Email:  {email}\n"
-        f"Perfil: {perfil}\n"
-        f"\n{mensaje}"
-    )
-    payload = json.dumps({
-        "title":       f"Consulta SIGALU – {nombre} ({perfil})",
-        "description": descripcion,
-    }).encode()
-
-    req = urllib.request.Request(endpoint, data=payload, method="POST")
+def d365_request(token: str, method: str, path: str, payload=None):
+    """Helper para llamadas a Dynamics Web API."""
+    url = f"{DYNAMICS_URL}/api/data/v9.2/{path}"
+    data = json.dumps(payload).encode() if payload else None
+    req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization",    f"Bearer {token}")
     req.add_header("Content-Type",     "application/json; charset=utf-8")
     req.add_header("Accept",           "application/json")
     req.add_header("OData-MaxVersion", "4.0")
     req.add_header("OData-Version",    "4.0")
     req.add_header("Prefer",           "return=representation")
-
     try:
         with urllib.request.urlopen(req) as r:
-            data = json.loads(r.read())
-            return data.get("incidentid", "ok")
+            raw = r.read()
+            return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
-        raise Exception(f"Dynamics {e.code}: {body}")
+        raise Exception(f"Dynamics {e.code} [{method} {path}]: {body}")
+
+
+def get_or_create_contact(token: str, nombre: str, email: str) -> str:
+    """Busca un contacto por email; si no existe lo crea. Devuelve contactid."""
+    # Buscar por email
+    path = f"contacts?$filter=emailaddress1 eq '{email}'&$select=contactid&$top=1"
+    result = d365_request(token, "GET", path)
+    values = result.get("value", [])
+    if values:
+        return values[0]["contactid"]
+    # Crear contacto nuevo
+    partes = nombre.strip().split(" ", 1)
+    firstname = partes[0]
+    lastname  = partes[1] if len(partes) > 1 else "."
+    contact = d365_request(token, "POST", "contacts", {
+        "firstname":      firstname,
+        "lastname":       lastname,
+        "emailaddress1":  email,
+    })
+    return contact.get("contactid", "")
+
+
+def create_incident(nombre: str, email: str, perfil: str, mensaje: str) -> str:
+    token = get_access_token()
+
+    # 1. Obtener o crear el contacto
+    contact_id = get_or_create_contact(token, nombre, email)
+
+    # 2. Crear el caso vinculado al contacto
+    descripcion = (
+        f"Nombre: {nombre}\n"
+        f"Email:  {email}\n"
+        f"Perfil: {perfil}\n"
+        f"\n{mensaje}"
+    )
+    payload = {
+        "title":       f"Consulta SIGALU – {nombre} ({perfil})",
+        "description": descripcion,
+    }
+    if contact_id:
+        payload["customerid_contact@odata.bind"] = f"/contacts({contact_id})"
+
+    incident = d365_request(token, "POST", "incidents", payload)
+    return incident.get("incidentid", "ok")
 
 
 def cors_headers(req: func.HttpRequest) -> dict:
