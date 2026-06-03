@@ -40,7 +40,8 @@ def get_access_token() -> str:
 
 def d365_request(token: str, method: str, path: str, payload=None):
     """Helper para llamadas a Dynamics Web API."""
-    url = f"{DYNAMICS_URL}/api/data/v9.2/{path}"
+    base = DYNAMICS_URL.rstrip("/")
+    url  = f"{base}/api/data/v9.2/{urllib.parse.quote(path, safe='/?=&$\'()@,')}"
     data = json.dumps(payload).encode() if payload else None
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization",    f"Bearer {token}")
@@ -60,8 +61,9 @@ def d365_request(token: str, method: str, path: str, payload=None):
 
 def get_or_create_contact(token: str, nombre: str, email: str) -> str:
     """Busca un contacto por email; si no existe lo crea. Devuelve contactid."""
-    # Buscar por email
-    path = f"contacts?$filter=emailaddress1 eq '{email}'&$select=contactid&$top=1"
+    # Buscar por email (espacios codificados para OData)
+    email_safe = urllib.parse.quote(email, safe="@.")
+    path = f"contacts?$filter=emailaddress1 eq '{email_safe}'&$select=contactid&$top=1"
     result = d365_request(token, "GET", path)
     values = result.get("value", [])
     if values:
