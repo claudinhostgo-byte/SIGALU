@@ -6,4 +6,5 @@ design_*_extracted/
 # Backend — credenciales y entorno (nunca subir a git)
 backend/api.py
 backend/.env
+backend/azure-function/local.settings.json
 
