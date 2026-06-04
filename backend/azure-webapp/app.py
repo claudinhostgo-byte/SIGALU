@@ -61,7 +61,7 @@ def get_or_create_contact(cfg, token, nombre, email, telefono="", empresa=""):
         contact_id = vals[0]["contactid"]
         update = {}
         if telefono: update["telephone1"] = telefono
-        if empresa:  update["companyname"] = empresa
+        if empresa:  update["company"]     = empresa
         if update:
             d365(cfg, token, "PATCH", f"contacts({contact_id})", update)
         return contact_id
@@ -72,7 +72,7 @@ def get_or_create_contact(cfg, token, nombre, email, telefono="", empresa=""):
         "emailaddress1": email,
     }
     if telefono: payload["telephone1"]  = telefono
-    if empresa:  payload["companyname"] = empresa
+    if empresa:  payload["company"]     = empresa
     contact = d365(cfg, token, "POST", "contacts", payload)
     return contact.get("contactid", "")
 
