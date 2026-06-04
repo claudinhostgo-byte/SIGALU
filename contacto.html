@@ -102,8 +102,16 @@
               <input id="f-nombre" type="text" name="nombre" required data-en-ph="Your name" placeholder="Tu nombre" />
             </div>
             <div class="form-field">
+              <label data-en="Company">Empresa</label>
+              <input id="f-empresa" type="text" name="empresa" data-en-ph="Your company" placeholder="Tu empresa" />
+            </div>
+            <div class="form-field">
               <label data-en="Email">Correo electrónico</label>
               <input id="f-email" type="email" name="email" required data-en-ph="you@company.cl" placeholder="tu@empresa.cl" />
+            </div>
+            <div class="form-field">
+              <label data-en="Phone">Teléfono</label>
+              <input id="f-telefono" type="tel" name="telefono" data-en-ph="+56 9 XXXX XXXX" placeholder="+56 9 XXXX XXXX" />
             </div>
             <div class="form-field">
               <label data-en="I am a…">Soy…</label>
@@ -130,7 +138,7 @@
             <div id="form-ok" style="display:none;background:var(--soft);border:1px solid var(--green-600);border-radius:var(--r);padding:20px 24px;text-align:center;">
               <svg style="width:36px;height:36px;color:var(--green-600);margin-bottom:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9"/></svg>
               <p style="font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:17px;margin-bottom:4px" data-en="Message sent!">¡Mensaje enviado!</p>
-              <p style="font-size:14px;color:var(--muted)" data-en="We've created your enquiry in our system. We'll reply within two business days.">Creamos tu consulta en nuestro sistema. Te responderemos en dos días hábiles.</p>
+              <p style="font-size:14px;color:var(--muted)" data-en="We've received your enquiry and will contact you as soon as possible.">Recibimos tu consulta y nos contactaremos contigo a la brevedad.</p>
               <p style="margin-top:10px;font-size:13px;color:var(--muted)" data-en="Case number:">Número de caso: <strong id="case-number" style="font-family:var(--font-display);color:var(--navy-700);letter-spacing:.04em"></strong></p>
             </div>
             <!-- Estado: error -->
@@ -157,18 +165,18 @@
 
             form.addEventListener('submit', function (e) {
               e.preventDefault();
-
-              // Reset estados
               sending.style.display = 'block';
               okBox.style.display   = 'none';
               errBox.style.display  = 'none';
               submit.style.display  = 'none';
 
               var payload = {
-                nombre:  document.getElementById('f-nombre').value.trim(),
-                email:   document.getElementById('f-email').value.trim(),
-                perfil:  document.getElementById('f-perfil').value,
-                mensaje: document.getElementById('f-mensaje').value.trim(),
+                nombre:   document.getElementById('f-nombre').value.trim(),
+                empresa:  document.getElementById('f-empresa').value.trim(),
+                email:    document.getElementById('f-email').value.trim(),
+                telefono: document.getElementById('f-telefono').value.trim(),
+                perfil:   document.getElementById('f-perfil').value,
+                mensaje:  document.getElementById('f-mensaje').value.trim(),
               };
 
               fetch(API, {

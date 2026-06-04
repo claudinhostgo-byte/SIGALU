@@ -51,19 +51,29 @@ def d365(cfg, token, method, path, payload=None):
         body = e.read().decode("utf-8", errors="replace")
         raise Exception(f"Dynamics {e.code}: {body}")
 
-def get_or_create_contact(cfg, token, nombre, email):
+def get_or_create_contact(cfg, token, nombre, email, telefono="", empresa=""):
     email_enc = urllib.parse.quote(email, safe="@.")
     result = d365(cfg, token, "GET",
         f"contacts?$filter=emailaddress1 eq '{email_enc}'&$select=contactid&$top=1")
     vals = result.get("value", [])
     if vals:
-        return vals[0]["contactid"]
+        # Actualizar teléfono y empresa si se proporcionaron
+        contact_id = vals[0]["contactid"]
+        update = {}
+        if telefono: update["telephone1"] = telefono
+        if empresa:  update["companyname"] = empresa
+        if update:
+            d365(cfg, token, "PATCH", f"contacts({contact_id})", update)
+        return contact_id
     parts = nombre.strip().split(" ", 1)
-    contact = d365(cfg, token, "POST", "contacts", {
+    payload = {
         "firstname":     parts[0],
         "lastname":      parts[1] if len(parts) > 1 else ".",
         "emailaddress1": email,
-    })
+    }
+    if telefono: payload["telephone1"]  = telefono
+    if empresa:  payload["companyname"] = empresa
+    contact = d365(cfg, token, "POST", "contacts", payload)
     return contact.get("contactid", "")
 
 @app.after_request
@@ -90,10 +100,12 @@ def contacto():
         cfg  = get_config()
         body = request.get_json(force=True)
 
-        nombre  = (body.get("nombre",  "") or "").strip()
-        email   = (body.get("email",   "") or "").strip()
-        perfil  = (body.get("perfil",  "") or "").strip()
-        mensaje = (body.get("mensaje", "") or "").strip()
+        nombre   = (body.get("nombre",   "") or "").strip()
+        empresa  = (body.get("empresa",  "") or "").strip()
+        email    = (body.get("email",    "") or "").strip()
+        telefono = (body.get("telefono", "") or "").strip()
+        perfil   = (body.get("perfil",   "") or "").strip()
+        mensaje  = (body.get("mensaje",  "") or "").strip()
 
         if not (nombre and email and mensaje):
             return jsonify({"ok": False, "msg": "Campos requeridos vacíos"}), 400
@@ -102,18 +114,26 @@ def contacto():
             return jsonify({"ok": False, "msg": "Servidor no configurado"}), 500
 
         token      = get_token(cfg)
-        contact_id = get_or_create_contact(cfg, token, nombre, email)
+        contact_id = get_or_create_contact(cfg, token, nombre, email, telefono, empresa)
 
-        desc = f"Nombre: {nombre}\nEmail: {email}\nPerfil: {perfil}\n\n{mensaje}"
+        desc = (
+            f"Nombre: {nombre}\n"
+            f"Empresa: {empresa}\n"
+            f"Email: {email}\n"
+            f"Teléfono: {telefono}\n"
+            f"Perfil: {perfil}\n\n"
+            f"{mensaje}"
+        )
         payload = {
-            "title":       f"Consulta SIGALU – {nombre} ({perfil})",
-            "description": desc,
+            "title":          f"Contacto web de: {nombre}",
+            "description":    desc,
+            "caseorigincode": 3,   # 3 = Web
         }
         if contact_id:
             payload["customerid_contact@odata.bind"] = f"/contacts({contact_id})"
 
-        incident     = d365(cfg, token, "POST", "incidents", payload)
-        case_id      = incident.get("incidentid", "")
+        incident      = d365(cfg, token, "POST", "incidents", payload)
+        case_id       = incident.get("incidentid", "")
         ticket_number = incident.get("ticketnumber", case_id)
         logging.info(f"Caso creado: {ticket_number} ({case_id})")
         return jsonify({"ok": True, "case": ticket_number, "incidentid": case_id})
