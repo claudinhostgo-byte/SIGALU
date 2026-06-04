@@ -112,10 +112,11 @@ def contacto():
         if contact_id:
             payload["customerid_contact@odata.bind"] = f"/contacts({contact_id})"
 
-        incident = d365(cfg, token, "POST", "incidents", payload)
-        case_id  = incident.get("incidentid", "ok")
-        logging.info(f"Caso creado: {case_id}")
-        return jsonify({"ok": True, "case": case_id})
+        incident     = d365(cfg, token, "POST", "incidents", payload)
+        case_id      = incident.get("incidentid", "")
+        ticket_number = incident.get("ticketnumber", case_id)
+        logging.info(f"Caso creado: {ticket_number} ({case_id})")
+        return jsonify({"ok": True, "case": ticket_number, "incidentid": case_id})
 
     except Exception as e:
         import traceback

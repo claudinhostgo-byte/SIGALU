@@ -180,10 +180,7 @@
               .then(function (data) {
                 sending.style.display = 'none';
                 if (data.ok) {
-                  // Mostrar número de caso (últimos 8 chars del UUID)
-                  var caseId = data.case || '';
-                  var caseShort = caseId ? caseId.split('-').pop().toUpperCase() : '';
-                  document.getElementById('case-number').textContent = caseShort || caseId;
+                  document.getElementById('case-number').textContent = data.case || '';
                   okBox.style.display = 'block';
                   form.reset();
                 } else {
