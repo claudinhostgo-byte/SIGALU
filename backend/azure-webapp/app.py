@@ -22,7 +22,11 @@ def get_config():
 
 def verify_recaptcha(secret, token):
     """Verifica el token reCAPTCHA con Google."""
-    if not secret or not token:
+    if not secret:
+        logging.warning("RECAPTCHA_SECRET no configurado — omitiendo verificacion")
+        return True   # temporal: permite paso si no hay secret configurado
+    if not token:
+        logging.warning("Token captcha vacío")
         return False
     body = urllib.parse.urlencode({
         "secret":   secret,
@@ -34,6 +38,7 @@ def verify_recaptcha(secret, token):
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     with urllib.request.urlopen(req) as r:
         result = json.loads(r.read())
+        logging.info(f"reCAPTCHA result: {result}")
         return result.get("success", False)
 
 def get_token(cfg):
