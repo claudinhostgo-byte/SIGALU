@@ -7,6 +7,7 @@
 <meta name="description" content="Canales de contacto por perfil, mesa de ayuda y canal de integridad de SIGALU." />
 <link rel="icon" type="image/png" href="assets/logo-icon.png" />
 <link rel="stylesheet" href="styles.css" />
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -146,6 +147,9 @@
               <span data-en="Error sending. Please email us at ">Error al enviar. Por favor escríbenos a </span><a href="mailto:contacto@sigalu.cl" style="color:inherit">contacto@sigalu.cl</a>
             </div>
 
+            <div class="g-recaptcha" data-sitekey="6LeGwQwtAAAAA OgyyAFKQ8p_UsXPias47h332Lgc" style="margin-bottom:16px"></div>
+            <p id="captcha-err" style="display:none;color:#b91c1c;font-size:13px;margin-bottom:10px;font-family:var(--font-display);font-weight:600">Por favor completa el captcha antes de enviar.</p>
+
             <button id="f-submit" type="submit" class="btn btn--primary" style="width:100%" data-en="Send message">Enviar mensaje</button>
           </form>
 
@@ -157,26 +161,37 @@
           (function () {
             var API = 'https://sigalu-api-c4awcvg2hacqeubm.eastus2-01.azurewebsites.net/api/contacto';
 
-            var form    = document.getElementById('crm-form');
-            var sending = document.getElementById('form-sending');
-            var okBox   = document.getElementById('form-ok');
-            var errBox  = document.getElementById('form-err');
-            var submit  = document.getElementById('f-submit');
+            var form       = document.getElementById('crm-form');
+            var sending    = document.getElementById('form-sending');
+            var okBox      = document.getElementById('form-ok');
+            var errBox     = document.getElementById('form-err');
+            var captchaErr = document.getElementById('captcha-err');
+            var submit     = document.getElementById('f-submit');
 
             form.addEventListener('submit', function (e) {
               e.preventDefault();
+
+              // Verificar captcha completado
+              var captchaToken = grecaptcha.getResponse();
+              if (!captchaToken) {
+                captchaErr.style.display = 'block';
+                return;
+              }
+              captchaErr.style.display = 'none';
+
               sending.style.display = 'block';
               okBox.style.display   = 'none';
               errBox.style.display  = 'none';
               submit.style.display  = 'none';
 
               var payload = {
-                nombre:   document.getElementById('f-nombre').value.trim(),
-                empresa:  document.getElementById('f-empresa').value.trim(),
-                email:    document.getElementById('f-email').value.trim(),
-                telefono: document.getElementById('f-telefono').value.trim(),
-                perfil:   document.getElementById('f-perfil').value,
-                mensaje:  document.getElementById('f-mensaje').value.trim(),
+                nombre:         document.getElementById('f-nombre').value.trim(),
+                empresa:        document.getElementById('f-empresa').value.trim(),
+                email:          document.getElementById('f-email').value.trim(),
+                telefono:       document.getElementById('f-telefono').value.trim(),
+                perfil:         document.getElementById('f-perfil').value,
+                mensaje:        document.getElementById('f-mensaje').value.trim(),
+                captchaToken:   captchaToken,
               };
 
               fetch(API, {
@@ -191,15 +206,18 @@
                   document.getElementById('case-number').textContent = data.case || '';
                   okBox.style.display = 'block';
                   form.reset();
+                  grecaptcha.reset();
                 } else {
                   errBox.style.display  = 'block';
                   submit.style.display  = 'block';
+                  grecaptcha.reset();
                 }
               })
               .catch(function () {
                 sending.style.display = 'none';
                 errBox.style.display  = 'block';
                 submit.style.display  = 'block';
+                grecaptcha.reset();
               });
             });
           })();

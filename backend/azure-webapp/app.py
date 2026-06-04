@@ -11,13 +11,30 @@ app = Flask(__name__)
 def get_config():
     """Lee credenciales en tiempo de petición, no al iniciar."""
     return {
-        "tenant":  os.environ.get("D365_TENANT_ID", ""),
-        "client":  os.environ.get("D365_CLIENT_ID", ""),
-        "secret":  os.environ.get("D365_CLIENT_SECRET", ""),
-        "url":     os.environ.get("D365_URL", "").rstrip("/"),
-        "origins": os.environ.get("ALLOWED_ORIGINS",
-                   "https://claudinhostgo-byte.github.io"),
+        "tenant":           os.environ.get("D365_TENANT_ID", ""),
+        "client":           os.environ.get("D365_CLIENT_ID", ""),
+        "secret":           os.environ.get("D365_CLIENT_SECRET", ""),
+        "url":              os.environ.get("D365_URL", "").rstrip("/"),
+        "origins":          os.environ.get("ALLOWED_ORIGINS",
+                            "https://claudinhostgo-byte.github.io"),
+        "recaptcha_secret": os.environ.get("RECAPTCHA_SECRET", ""),
     }
+
+def verify_recaptcha(secret, token):
+    """Verifica el token reCAPTCHA con Google."""
+    if not secret or not token:
+        return False
+    body = urllib.parse.urlencode({
+        "secret":   secret,
+        "response": token,
+    }).encode()
+    req = urllib.request.Request(
+        "https://www.google.com/recaptcha/api/siteverify",
+        data=body, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    with urllib.request.urlopen(req) as r:
+        result = json.loads(r.read())
+        return result.get("success", False)
 
 def get_token(cfg):
     url  = f"https://login.microsoftonline.com/{cfg['tenant']}/oauth2/v2.0/token"
@@ -109,6 +126,11 @@ def contacto():
 
         if not (nombre and email and mensaje):
             return jsonify({"ok": False, "msg": "Campos requeridos vacíos"}), 400
+
+        # Verificar reCAPTCHA
+        captcha_token = (body.get("captchaToken", "") or "").strip()
+        if not verify_recaptcha(cfg["recaptcha_secret"], captcha_token):
+            return jsonify({"ok": False, "msg": "Verificación de seguridad fallida. Por favor recarga e intenta nuevamente."}), 400
 
         if not cfg["tenant"]:
             return jsonify({"ok": False, "msg": "Servidor no configurado"}), 500
