@@ -23,8 +23,8 @@ def get_config():
 def verify_recaptcha(secret, token):
     """Verifica el token reCAPTCHA con Google."""
     if not secret:
-        logging.warning("RECAPTCHA_SECRET no configurado — omitiendo verificacion")
-        return True   # temporal: permite paso si no hay secret configurado
+        logging.warning("RECAPTCHA_SECRET no configurado")
+        return False
     if not token:
         logging.warning("Token captcha vacío")
         return False
