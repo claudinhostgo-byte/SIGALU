@@ -8,3 +8,6 @@ backend/api.py
 backend/.env
 backend/azure-function/local.settings.json
 
+
+# Artefactos de build
+backend/*.zip
